@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <title>data binding</title>
+
+    </head>
+    <body>
+        <section bind="array=>repeat">
+            <p bind="$item=>text"></p>
+        </section>
+
+        <input type="text" bind="newName=>value" />
+        <input type="number" bind="newAge=>value" />
+        <button bind="addPerson=>event(click)">add person</button>
+
+        <script src="data-binding.js"></script>
+        <script>
+            var vm = {
+                "newName": "",
+                "newAge": "",
+                "persons": [
+                    {
+                        "name": "mathias",
+                        "age": 18
+                    }
+                ],
+                "addPerson": function () {
+                    vm.persons.push({
+                        "name": vm.newName,
+                        "age": vm.newAge
+                    });
+                },
+                "array": [
+                    "test",
+                    "test1",
+                    "test2"
+                ]
+            };
+
+            new Model(vm);
+        </script>
+    </body>
+</html>
