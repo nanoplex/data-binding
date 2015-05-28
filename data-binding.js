@@ -5,6 +5,7 @@ var Model;
 
     Model = function (vm, scope) {
         var that = this;
+
         this.bind = {
             types: {
                 text: function (property, binder) {
@@ -21,52 +22,90 @@ var Model;
                         binder.addEventListener(event, function () {
                             that.value.set(property, this.value);
                         });
-                    } else {
-                        console.error("element bound with value type must be input");
-                    }
+                    } else
+                        console.error("syntax error:", "element bound with value type must be input", binder);
                 },
                 event: function (property, binder, type) {
                     var event = type
                         .match(/\(.+?\)/)[0]
                         .replace(/\(/, "")
-                        .replace(/\)/, "");
+                        .replace(/\)/, ""),
+                        func = vm[property];
 
-                    binder.addEventListener(event, function(e) {
-                        vm[property](e);
-                    });
+                    if (typeof func === "function") {
+                        binder.addEventListener(event, function(e) {
+                            func(e);
+                        });
+                    } else
+                        console.error("syntex error:", "value bound to event type must be function", binder);
                 },
                 attr: function (property, binder, type) {
                     var attr = type
                         .match(/\(.+?\)/)[0]
                         .replace(/\(/, "")
-                        .replace(/\)/, "");
+                        .replace(/\)/, ""),
+                        value = that.value.get(property);
 
-                    binder.setAttribute(attr, that.value.get(property));
+                    binder.setAttribute(attr, JSON.stringify(value));
                 },
                 repeat: function (property, binder) {
                     var array = vm[property],
                         template = document.createElement("div");
 
-                    template.innerHTML = binder.innerHTML;
-
-                    binder.innerHTML = "";
-
-                    array.forEach(function (item) {
-                        var clone = template.cloneNode(),
-                            binders;
-
-                        clone.innerHTML = template.innerHTML;
-
-                        binders = clone.querySelectorAll("*[bind]");
-
-                        vm.$item = item;
-
-                        for (var i = 0; i < binders.length; i++) {
-                            that.bind.element(binders[i]);
+                    if (Array.isArray(array)) {
+                        if (!binder._template) {
+                            binder._template = binder.innerHTML;
                         }
 
-                        binder.innerHTML += clone.innerHTML;
-                    });
+                        template.innerHTML = binder._template;
+
+                        binder.innerHTML = "";
+
+                        array.forEach(function (item, index) {
+                            var clone = template.cloneNode(),
+                                binders,
+                                i;
+
+                            clone.innerHTML = template.innerHTML;
+
+                            binders = clone.querySelectorAll("*[bind]");
+
+                            vm.$item = item;
+                            vm.$index = index;
+
+                            for (i = 0; i < binders.length; i++) {
+                                that.bind.element(binders[i]);
+                            }
+
+                            for (i = 0; i < clone.childNodes.length; i++) {
+                                var node = clone.childNodes[i];
+                                if (node.nodeName !== "#text")
+                                    binder.appendChild(node);
+                            }
+                        });
+                    } else
+                        console.error("syntex error:", "value bound to repeat type must be array", binder);
+                },
+                if: function (property, binder) {
+                    var not = false,
+                        bool;
+
+                    if (property.match(/^!/) !== null) {
+                        not = true;
+                        property = property.replace(/^!/, "");
+                    }
+
+                    if (typeof vm[property] === "boolean") {
+                        bool = vm[property];
+
+                        if (not) bool = !bool;
+
+                        if (!bool)
+                            binder.setAttribute("hidden", "");
+                        else
+                            binder.removeAttribute("hidden");
+                    } else
+                        console.error("syntax error: value bound to if type must be boolean", binder);
                 }
             },
             element: function (binder) {
@@ -80,9 +119,10 @@ var Model;
                     var property = bindAttr[0],
                         type = bindAttr[1];
 
-                    console.log(property);
-
-                    that.bind.types[type.match(/^\w+/)](property, binder, type);
+                    if (property, type)
+                        that.bind.types[type.match(/^\w+/)](property, binder, type);
+                    else
+                        console.error("syntax error:", "property and type must be set", binder);
                 });
             }
         };
@@ -156,7 +196,7 @@ var Model;
             var uses = {};
 
             for (var i = 0; i < binders.length; i++) {
-                var value = binders[i].getAttribute("bind").split("=>")[0];
+                var value = binders[i].getAttribute("bind").split("=>")[0].replace(/^!/, "");
 
                 if (uses[value]) {
                     uses[value].pos.push(i);
@@ -186,49 +226,50 @@ var Model;
 
             return uses;
         };
-        this.observe = function (obj, uses, binders, root) {
+        this.observe = function (obj, root) {
             Object.observe(obj, function (changes) {
                 changes.forEach(function (change) {
                     var name = ((root) ? root : "") + change.name;
 
-                    if (change.name !== "$item") {
-                        if (uses[name].pos) {
-                            uses[name].pos.forEach(function (pos) {
-                                that.bind.element(binders[pos]);
-                            });
-                        }
-                        if (uses[name].func) {
-                            uses[name].func.forEach(function (func) {
-                                uses[func].pos.forEach(function (pos) {
-                                    that.bind.element(binders[pos]);
+                    name = name.replace(/\.\d+$/, "");
+
+                    if (name.match(/\.length$/, "") === null) {
+                        if (change.name !== "$item" && change.name !== "$index") {
+                            if (that.uses[name].pos) {
+                                that.uses[name].pos.forEach(function (pos) {
+                                    that.bind.element(that.binders[pos]);
                                 });
-                            });
+                            }
+                            if (that.uses[name].func) {
+                                that.uses[name].func.forEach(function (func) {
+                                    that.uses[func].pos.forEach(function (pos) {
+                                        that.bind.element(that.binders[pos]);
+                                    });
+                                });
+                            }
                         }
                     }
                 });
             });
             for (var prop in obj) {
-                if (typeof obj[prop] === "object" && prop !== "$item")
-                    that.observe(obj[prop], uses, binders, ((root) ? root : "") + prop + ".");
+                if (typeof obj[prop] === "object" && prop !== "$item" && prop !== "$index") {
+                    that.observe(obj[prop], ((root) ? root : "") + prop + ".");
+                }
             }
         };
         this.init = function () {
-            var binders,
-                uses;
-
             if (!scope)
                 scope = document.body;
 
-            binders = scope.querySelectorAll("*[bind]");
+            that.binders = scope.querySelectorAll("*[bind]");
+            that.uses = that.getUses(that.binders);
+            console.log("uses", that.uses);
 
-            uses = that.getUses(binders);
-            console.log("uses", uses);
+            that.observe(vm);
 
-            that.observe(vm, uses, binders);
-
-            for (var i = 0; i < binders.length; i++) {
-                if (binders[i].getAttribute("bind").match(/\$item/) === null)
-                    that.bind.element(binders[i]);
+            for (var i = 0; i < that.binders.length; i++) {
+                if (that.binders[i].getAttribute("bind").match(/\$item/) === null)
+                    that.bind.element(that.binders[i]);
             }
         };
 
