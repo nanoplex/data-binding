@@ -8,8 +8,11 @@ var Model;
 
         this.bind = {
             types: {
-                text: function (property, binder) {
+                html: function (property, binder) {
                     binder.innerHTML = that.value.get(property);
+                },
+                text: function (property, binder) {
+                    binder.innerText = that.value.get(property);
                 },
                 value: function (property, binder) {
                     if (binder.nodeName === "INPUT") {
@@ -84,19 +87,18 @@ var Model;
                             }
                         });
                     } else
-                        console.error("syntex error:", "value bound to repeat type must be array", binder);
+                        console.error("syntex error: value bound to repeat type must be array", binder);
                 },
                 if: function (property, binder) {
                     var not = false,
-                        bool;
+                        bool = that.value.get(property);
 
                     if (property.match(/^!/) !== null) {
                         not = true;
                         property = property.replace(/^!/, "");
                     }
 
-                    if (typeof vm[property] === "boolean") {
-                        bool = vm[property];
+                    if (typeof bool === "boolean") {
 
                         if (not) bool = !bool;
 
@@ -226,7 +228,7 @@ var Model;
 
             return uses;
         };
-        this.observe = function (obj, root) {
+        this.observe = function (obj, uses, binders, root) {
             Object.observe(obj, function (changes) {
                 changes.forEach(function (change) {
                     var name = ((root) ? root : "") + change.name;
@@ -235,15 +237,15 @@ var Model;
 
                     if (name.match(/\.length$/, "") === null) {
                         if (change.name !== "$item" && change.name !== "$index") {
-                            if (that.uses[name].pos) {
-                                that.uses[name].pos.forEach(function (pos) {
-                                    that.bind.element(that.binders[pos]);
+                            if (uses[name].pos) {
+                                uses[name].pos.forEach(function (pos) {
+                                    that.bind.element(binders[pos]);
                                 });
                             }
-                            if (that.uses[name].func) {
-                                that.uses[name].func.forEach(function (func) {
-                                    that.uses[func].pos.forEach(function (pos) {
-                                        that.bind.element(that.binders[pos]);
+                            if (uses[name].func) {
+                                uses[name].func.forEach(function (func) {
+                                    uses[func].pos.forEach(function (pos) {
+                                        that.bind.element(binders[pos]);
                                     });
                                 });
                             }
@@ -253,7 +255,7 @@ var Model;
             });
             for (var prop in obj) {
                 if (typeof obj[prop] === "object" && prop !== "$item" && prop !== "$index") {
-                    that.observe(obj[prop], ((root) ? root : "") + prop + ".");
+                    that.observe(obj[prop], uses, binders, ((root) ? root : "") + prop + ".");
                 }
             }
         };
@@ -261,15 +263,14 @@ var Model;
             if (!scope)
                 scope = document.body;
 
-            that.binders = scope.querySelectorAll("*[bind]");
-            that.uses = that.getUses(that.binders);
-            console.log("uses", that.uses);
+            var binders = scope.querySelectorAll("*[bind]"),
+                uses = that.getUses(binders);
 
-            that.observe(vm);
+            that.observe(vm, uses, binders);
 
-            for (var i = 0; i < that.binders.length; i++) {
-                if (that.binders[i].getAttribute("bind").match(/\$item/) === null)
-                    that.bind.element(that.binders[i]);
+            for (var i = 0; i < binders.length; i++) {
+                if (binders[i].getAttribute("bind").match(/\$item/) === null)
+                    that.bind.element(binders[i]);
             }
         };
 
