@@ -1,0 +1,68 @@
+<html>
+    <head>
+        <title>data binding</title>
+        <style>
+            body {
+                font-family: "HelveticaNeue-Light",
+                    "Helvetica Neue Light",
+                    "Helvetica Neue",
+                    Helvetica, Arial,
+                    "Lucida Grande",
+                    sans-serif;
+
+
+            }
+        </style>
+    </head>
+    <body>
+        <section bind="persons=>repeat">
+            <div>
+                <p bind="showPerson($item)=>text"></p>
+                <button bind="deletePerson($index)=>event(click)">
+                    <p>delete</p>
+                </button>
+            </div>
+        </section>
+
+        <article>
+            <input type="text" bind="person.name=>value" />
+            <input type="number" bind="person.age=>value" />
+            <button bind="addPerson()=>event(click)">
+                <p>add person</p>
+            </button>
+        </article>
+
+        <script src="object-observe-polyfill.min.js"></script>
+        <script src="data-binding.js"></script>
+        <script>
+
+            var vm = {
+                addPerson: function(event) {
+                    vm.persons.push({
+                        name: vm.person.name,
+                        age: vm.person.age,
+                        old: false
+                    });
+
+                    vm.person.name = "";
+                    vm.person.age = 0;
+                },
+                deletePerson: function(event, index) {
+                    vm.persons.splice(index, 1);
+                },
+                showPerson: function (person) {
+                    return person.name + " " + person.age;
+                },
+                person: {
+                    name: "",
+                    age: 0
+                },
+                persons: [
+                ]
+            };
+
+            new Model(vm);
+
+        </script>
+    </body>
+</html>

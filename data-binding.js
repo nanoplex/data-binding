@@ -30,21 +30,36 @@ var Model;
                 },
                 event: function (property, binder, type) {
                     var event = type
-                        .match(/\(.+?\)/)[0]
+                        .match(/\(.*?\)/)[0]
                         .replace(/\(/, "")
                         .replace(/\)/, ""),
-                        func = vm[property];
+                        func = vm[property.replace(/\(.*?\)/, "")],
+                        params = that.value.params(property);
+
+                    if (params) {
+                        for (var i = 0; i < params.length; i++) {
+                            params[i] = that.value.get(params[i]);
+                        }
+                    }
 
                     if (typeof func === "function") {
                         binder.addEventListener(event, function(e) {
-                            func(e);
+                            var newParams = [e];
+
+                            if(params) {
+                                params.forEach(function (param) {
+                                    newParams.push(param);
+                                });
+                            }
+
+                            func.apply(undefined, newParams);
                         });
                     } else
                         console.error("syntex error:", "value bound to event type must be function", binder);
                 },
                 attr: function (property, binder, type) {
                     var attr = type
-                        .match(/\(.+?\)/)[0]
+                        .match(/\(.*?\)/)[0]
                         .replace(/\(/, "")
                         .replace(/\)/, ""),
                         value = that.value.get(property);
@@ -91,12 +106,14 @@ var Model;
                 },
                 if: function (property, binder) {
                     var not = false,
-                        bool = that.value.get(property);
+                        bool;
 
                     if (property.match(/^!/) !== null) {
                         not = true;
                         property = property.replace(/^!/, "");
                     }
+
+                    bool = that.value.get(property)
 
                     if (typeof bool === "boolean") {
 
@@ -154,7 +171,7 @@ var Model;
                 return vm[root].apply(undefined, values);
             },
             params: function (value) {
-                var params = value.match(/\(.+?\)/);
+                var params = value.match(/\(.*?\)/);
 
                 if (params) {
                     params = params[0]
@@ -167,7 +184,7 @@ var Model;
                 }
             },
             get: function (property) {
-                var root = property.match(/^[$\w\.]+/)[0];
+                var root = property.replace(/\(.*?\)/, "");
 
                 if (!vm[root])
                     return that.value.object(property);
@@ -196,6 +213,8 @@ var Model;
         };
         this.getUses = function (binders) {
             var uses = {};
+
+            // TO DO // uses with no uses
 
             for (var i = 0; i < binders.length; i++) {
                 var value = binders[i].getAttribute("bind").split("=>")[0].replace(/^!/, "");
