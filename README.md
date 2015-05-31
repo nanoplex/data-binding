@@ -14,11 +14,17 @@ types
 -----
 
 text
+
 html
+
 value
+
 event(eventType)
+
 attr(attrName)
+
 repeat
+
 if
 
 #text
