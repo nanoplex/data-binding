@@ -223,7 +223,10 @@ var Model;
                 var value = binders[i].getAttribute("bind").split("=>")[0].replace(/^!/, "");
 
                 if (uses[value]) {
-                    uses[value].pos.push(i);
+                    if (uses[value].pos)
+                        uses[value].pos.push(i);
+                    else
+                        uses[value].pos = [i];
                 } else if (value.match(/$item/) === null) {
                     uses[value] = {
                         pos: [i]
