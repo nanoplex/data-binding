@@ -64,7 +64,10 @@ var Model;
                         .replace(/\)/, ""),
                         value = that.value.get(property);
 
-                    binder.setAttribute(attr, JSON.stringify(value).relpace(/^\"/, "").relpace(/\"$/, ""));
+                    if (typeof value === "object")
+                        binder.setAttribute(attr, JSON.stringify(value));
+                    else
+                        binder.setAttribute(attr, value);
                 },
                 repeat: function (property, binder) {
                     var array = vm[property],
