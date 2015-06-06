@@ -50,6 +50,7 @@ var Model;
                                 ? refrences[textMatch] = { pos: [i] }
                                 : refrences[textMatch].pos.push(i)
 
+                            // move to func
                             if (textMatch.split("|").length > 1) {
                                 var func = textMatch.replace(/[{}\s]/g, "").split("|");
                                 func[1].split(",").forEach(function (param) {
@@ -75,12 +76,12 @@ var Model;
                         if (attrMatch) {
                             attrMatch = attrMatch[0];
 
-                            elements = bind.element.attribute(elements, attrMatch, [a, b]);
+                            elements = bind.element.attribute(elements, attrMatch, [a, attr.name]);
 
                             if (!refrences[attrMatch]) {
-                                refrences[attrMatch] = { pos: [[a, b]] };
+                                refrences[attrMatch] = { pos: [[a, attr.name]] };
                             } else {
-                                refrences[attrMatch].pos.push([a, b]);
+                                refrences[attrMatch].pos.push([a, attr.name]);
                             }
 
                             if (attr.name === "if") {
