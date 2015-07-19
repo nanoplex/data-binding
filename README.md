@@ -8,9 +8,10 @@ bind variables, functions and objects to attributes and inside elements
 usage
 -----
 attr="{{var}}"
-<el>{{var}}</el>
+<pre><el>{{var}}</el>
 <el>{{func(var)}}</el>
 <el>{{object.path.string}}</el>
+</pre>
 
 example
 -------
