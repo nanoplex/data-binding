@@ -7,16 +7,19 @@ bind variables, functions and objects to attributes and inside elements
 
 usage
 -----
-attr="{{var}}"
-<pre><el>{{var}}</el>
-<el>{{func(var)}}</el>
-<el>{{object.path.string}}</el>
+<pre>
+	attr="{{var}}"
+	<el>{{var}}</el>
+	<el>{{func(var)}}</el>
+	<el>{{object.path.string}}</el>
 </pre>
 
 example
 -------
-<p data-test="{{var}}">{{function(var, var1)}}</p>
-<p>{{object.string}}</p>
+<pre>
+	<p data-test="{{var}}">{{function(var, var1)}}</p>
+	<p>{{object.string}}</p>
+</pre>
 
 
 #events
@@ -28,7 +31,9 @@ attribute event="function:event"
 
 example
 -------
-<input type="text" event="validate:input" />
+<pre>
+	<input type="text" event="validate:input" />
+</pre>
 
 
 #template
@@ -41,9 +46,11 @@ usage
 repeat="array"
 
 example
-<template repeat="array">
-	// tempalte
-</template>
+<pre>
+	<template repeat="array">
+		// tempalte
+	</template>
+</pre>
 
 show
 ----
@@ -52,9 +59,12 @@ usage
 show="{{boolean}}"
 
 example
-<template show="{{boolean}}">
-	// template
-</template>
+<pre>
+	<template show="array">
+		// tempalte
+	</template>
+</pre>
+
 
 
 #init
